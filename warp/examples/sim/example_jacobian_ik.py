@@ -31,11 +31,11 @@ wp.init()
 
 @wp.kernel
 def compute_endeffector_position(
-    body_q: wp.array(dtype=wp.transform),
-    num_links: int,
-    ee_link_index: int,
-    ee_link_offset: wp.vec3,
-    ee_pos: wp.array(dtype=wp.vec3),
+        body_q: wp.array(dtype=wp.transform),
+        num_links: int,
+        ee_link_index: int,
+        ee_link_offset: wp.vec3,
+        ee_pos: wp.array(dtype=wp.vec3),
 ):
     tid = wp.tid()
     ee_pos[tid] = wp.transform_point(body_q[tid * num_links + ee_link_index], ee_link_offset)
@@ -56,11 +56,33 @@ class Example:
 
         articulation_builder = wp.sim.ModelBuilder()
 
-        wp.sim.parse_urdf(
-            os.path.join(warp.examples.get_asset_directory(), "cartpole.urdf"),
+        ROBOT_MODELS = {
+            "pr2": "mj_pr2/mj_pr2.mjcf",
+            "allegro": "allegro/allegro_right.mjcf",
+            "panda": "panda/panda.mjcf",
+            "panda_robotiq": "panda_robotiq/panda_robotiq.mjcf",
+            "ur5e": "ur5e/ur5e.xml",
+            "ur10e": "ur10e/ur10e.xml",
+            "kuka_iiwa_14": "kuka_iiwa_14/iiwa14.xml",
+            "jaco2": "jaco2/jaco2.xml",
+            "shadow_left": "shadow_hand/left_hand.xml",
+            "shadow_right": "shadow_hand/right_hand.xml",
+        }
+
+        wp.sim.parse_mjcf(
+            os.path.join(warp.examples.get_asset_directory(), ROBOT_MODELS["ur5e"]),
             articulation_builder,
             xform=wp.transform_identity(),
-            floating=False,
+            stiffness=0.0,
+            damping=1.0,
+            armature=0.1,
+            contact_ke=1.0e4,
+            contact_kd=1.0e2,
+            contact_kf=1.0e2,
+            contact_mu=0.75,
+            limit_ke=1.0e3,
+            limit_kd=1.0e1,
+            up_axis="y"
         )
 
         builder = wp.sim.ModelBuilder()

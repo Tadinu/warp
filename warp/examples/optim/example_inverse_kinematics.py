@@ -18,6 +18,7 @@ import numpy as np
 import warp as wp
 import warp.sim
 import warp.sim.render
+import warp.examples
 
 wp.init()
 
@@ -51,46 +52,39 @@ class Example:
         self.frame_dt = 1.0 / 60.0
         self.render_time = 0.0
 
+        articulation_builder = wp.sim.ModelBuilder()
+
+        ROBOT_MODELS = {
+            "pr2": "mj_pr2/mj_pr2.mjcf",
+            "allegro": "allegro/allegro_right.mjcf",
+            "panda": "panda/panda.mjcf",
+            "panda_robotiq": "panda_robotiq/panda_robotiq.mjcf",
+            "ur5e": "ur5e/ur5e.xml",
+            "ur10e": "ur10e/ur10e.xml",
+            "kuka_iiwa_14": "kuka_iiwa_14/iiwa14.xml",
+            "jaco2": "jaco2/jaco2.xml",
+            "shadow_left": "shadow_hand/left_hand.xml",
+            "shadow_right": "shadow_hand/right_hand.xml",
+        }
+
+        import os
+        wp.sim.parse_mjcf(
+            os.path.join(warp.examples.get_asset_directory(), ROBOT_MODELS["ur5e"]),
+            articulation_builder,
+            xform=wp.transform_identity(),
+            stiffness=0.0,
+            damping=1.0,
+            armature=0.1,
+            contact_ke=1.0e4,
+            contact_kd=1.0e2,
+            contact_kf=1.0e2,
+            contact_mu=0.75,
+            limit_ke=1.0e3,
+            limit_kd=1.0e1,
+            up_axis="y"
+        )
         builder = wp.sim.ModelBuilder()
-        builder.add_articulation()
-
-        chain_length = 4
-        chain_width = 1.0
-
-        for i in range(chain_length):
-            if i == 0:
-                parent = -1
-                parent_joint_xform = wp.transform([0.0, 0.0, 0.0], wp.quat_identity())
-            else:
-                parent = builder.joint_count - 1
-                parent_joint_xform = wp.transform([chain_width, 0.0, 0.0], wp.quat_identity())
-
-            # create body
-            b = builder.add_body(origin=wp.transform([i, 0.0, 0.0], wp.quat_identity()), armature=0.1)
-
-            builder.add_joint_revolute(
-                parent=parent,
-                child=b,
-                axis=(0.0, 0.0, 1.0),
-                parent_xform=parent_joint_xform,
-                child_xform=wp.transform_identity(),
-                limit_lower=-np.deg2rad(60.0),
-                limit_upper=np.deg2rad(60.0),
-                target_ke=0.0,
-                target_kd=0.0,
-                limit_ke=30.0,
-                limit_kd=30.0,
-            )
-
-            if i == chain_length - 1:
-                # create end effector
-                builder.add_shape_sphere(pos=wp.vec3(0.0, 0.0, 0.0), radius=0.1, density=10.0, body=b)
-
-            else:
-                # create shape
-                builder.add_shape_box(
-                    pos=wp.vec3(chain_width * 0.5, 0.0, 0.0), hx=chain_width * 0.5, hy=0.1, hz=0.1, density=10.0, body=b
-                )
+        builder.add_builder(articulation_builder)
 
         # finalize model
         self.model = builder.finalize(self.device)

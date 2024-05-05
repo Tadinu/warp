@@ -182,7 +182,7 @@ def parse_mjcf(
             euler = np.fromstring(attrib["euler"], sep=" ")
             if use_degrees:
                 euler *= np.pi / 180
-            return wp.quat_from_euler(euler, *euler_seq)
+            return wp.quat_rpy(euler[0], euler[1], euler[2])
         if "axisangle" in attrib:
             axisangle = np.fromstring(attrib["axisangle"], sep=" ")
             angle = axisangle[3]

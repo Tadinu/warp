@@ -311,7 +311,8 @@ def compute_mesh_inertia(
 
 
 def transform_inertia(m, I, p, q):
-    R = wp.quat_to_matrix(q)
+    R = wp.mat33f(wp.quat_to_matrix(q))
 
     # Steiner's theorem
-    return R @ I @ wp.transpose(R) + m * (wp.dot(p, p) * wp.mat33(np.eye(3)) - wp.outer(p, p))
+
+    return R @ I @ wp.transpose(R) + (wp.dot(p, p) * wp.mat33(np.eye(3)) - wp.outer(p, p))
